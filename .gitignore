@@ -45,3 +45,8 @@ charts/*.svg
 tmp/
 *.tmp
 *.bak
+
+# Tauri build artifacts
+src-tauri/target/
+dist/
+node_modules/

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://schema.tauri.app/config/2/capability",
+  "identifier": "main",
+  "description": "Main capability for Dark-GPT",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "shell:allow-open",
+    "shell:allow-execute",
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        { "name": "docker", "cmd": "docker", "args": true },
+        { "name": "docker-compose", "cmd": "docker", "args": ["compose"] }
+      ]
+    }
+  ]
+}

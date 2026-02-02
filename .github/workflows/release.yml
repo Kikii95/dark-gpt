@@ -1,0 +1,124 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            artifact: AppImage
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact: msi
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          cache-on-failure: true
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Dark-GPT ${{ github.ref_name }}'
+          releaseBody: |
+            ## Dark-GPT ${{ github.ref_name }}
+
+            Desktop application for running uncensored LLMs locally.
+
+            ### Prerequisites
+            - Docker Desktop or Docker Engine
+            - Ollama
+
+            ### Installation
+            1. Download the installer for your platform
+            2. Run the installer
+            3. Launch Dark-GPT
+            4. Follow the setup wizard
+
+            ### Downloads
+            See assets below for your platform.
+          releaseDraft: false
+          prerelease: false
+          includeDebug: false
+
+  release-notes:
+    name: Update Release Notes
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Get changelog entry
+        id: changelog
+        run: |
+          # Extract the latest version section from CHANGELOG.md
+          ENTRY=$(awk '/^## \['"${{ steps.version.outputs.VERSION }}"'\]/{flag=1; next} /^## \[/{flag=0} flag' CHANGELOG.md)
+          echo "ENTRY<<EOF" >> $GITHUB_OUTPUT
+          echo "$ENTRY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Update release with changelog
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          body: |
+            ## Dark-GPT ${{ github.ref_name }}
+
+            ${{ steps.changelog.outputs.ENTRY }}
+
+            ### Prerequisites
+            - Docker Desktop or Docker Engine
+            - Ollama
+
+            ### Installation
+            1. Download the installer for your platform
+            2. Run the installer
+            3. Launch Dark-GPT
+            4. Follow the setup wizard
+          append_body: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

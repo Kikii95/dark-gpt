@@ -2,6 +2,38 @@
 
 Toutes les modifications notables de ce projet sont documentées ici.
 
+## [0.6.0] - 2026-02-02
+
+### Added
+- **Desktop Application** : GUI Tauri portable (Windows + Linux)
+  - Setup wizard avec détection prérequis (Docker, Ollama)
+  - Téléchargement modèle avec progress bar
+  - Interface Open-WebUI intégrée (iframe)
+  - One-click start/stop services
+- **Backend Rust** :
+  - `commands/docker.rs` : Gestion Docker Compose
+  - `commands/ollama.rs` : API Ollama (list, pull avec events)
+  - `commands/health.rs` : Health checks services
+  - `commands/setup.rs` : Détection prérequis, wizard logic
+- **Frontend Svelte 5** :
+  - Dark theme avec Tailwind CSS
+  - Event listening Tauri pour progress
+  - Responsive UI avec loading states
+- **CI/CD GitHub Actions** :
+  - `ci.yml` : Lint et check sur PRs
+  - `release.yml` : Build multi-plateforme sur tags
+- **Documentation** :
+  - `docs/adr/0005-tauri-gui.md` : ADR architecture Tauri
+
+### Changed
+- Structure projet : ajout `src-tauri/` (Rust) et `src/` (Svelte)
+- Version bump : 0.5.0 → 0.6.0
+
+### Technical
+- Tauri 2 + Svelte 5 + Rust + Tailwind CSS
+- Binaries : ~15-20MB (vs ~150MB Electron)
+- Build time CI : ~8-12 min (avec cache)
+
 ## [0.5.0] - 2026-02-02
 
 ### Added

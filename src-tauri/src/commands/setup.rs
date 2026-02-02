@@ -1,0 +1,292 @@
+// Setup wizard commands
+
+use serde::{Deserialize, Serialize};
+use tauri::{AppHandle, Manager};
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Prerequisites {
+    pub os: OsInfo,
+    pub docker: DependencyStatus,
+    pub ollama: DependencyStatus,
+    pub model_dolphin: bool,
+    pub https_configured: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct OsInfo {
+    pub name: String,
+    pub version: String,
+    pub arch: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DependencyStatus {
+    pub installed: bool,
+    pub running: bool,
+    pub version: Option<String>,
+    pub download_url: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SetupState {
+    pub completed: bool,
+    pub current_step: u32,
+    pub total_steps: u32,
+    pub prerequisites_ok: bool,
+    pub model_downloaded: bool,
+    pub services_configured: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AppSettings {
+    pub default_model: String,
+    pub auto_start_services: bool,
+    pub check_updates: bool,
+}
+
+/// Detect system prerequisites
+#[tauri::command]
+pub async fn detect_prerequisites() -> Result<Prerequisites, String> {
+    tracing::info!("Detecting system prerequisites");
+
+    // OS Info
+    let os = OsInfo {
+        name: std::env::consts::OS.to_string(),
+        version: get_os_version(),
+        arch: std::env::consts::ARCH.to_string(),
+    };
+
+    // Docker status
+    let docker = detect_docker().await;
+
+    // Ollama status
+    let ollama = detect_ollama().await;
+
+    // Check if dolphin model exists
+    let model_dolphin = check_model_exists("dolphin-llama3:8b").await;
+
+    // Check HTTPS configuration
+    let https_configured = check_https_configured();
+
+    Ok(Prerequisites {
+        os,
+        docker,
+        ollama,
+        model_dolphin,
+        https_configured,
+    })
+}
+
+async fn detect_docker() -> DependencyStatus {
+    let output = std::process::Command::new("docker")
+        .args(["version", "--format", "{{.Server.Version}}"])
+        .output();
+
+    match output {
+        Ok(o) if o.status.success() => {
+            let version = String::from_utf8_lossy(&o.stdout).trim().to_string();
+
+            // Check if running
+            let running = std::process::Command::new("docker")
+                .args(["info"])
+                .output()
+                .map(|o| o.status.success())
+                .unwrap_or(false);
+
+            DependencyStatus {
+                installed: true,
+                running,
+                version: Some(version),
+                download_url: None,
+            }
+        }
+        _ => DependencyStatus {
+            installed: false,
+            running: false,
+            version: None,
+            download_url: Some(get_docker_download_url()),
+        },
+    }
+}
+
+async fn detect_ollama() -> DependencyStatus {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(2))
+        .build()
+        .unwrap();
+
+    match client
+        .get("http://localhost:11434/api/version")
+        .send()
+        .await
+    {
+        Ok(response) if response.status().is_success() => {
+            let version: serde_json::Value = response.json().await.unwrap_or_default();
+            DependencyStatus {
+                installed: true,
+                running: true,
+                version: version["version"].as_str().map(|s| s.to_string()),
+                download_url: None,
+            }
+        }
+        _ => {
+            // Check if binary exists
+            let installed = std::process::Command::new("which")
+                .arg("ollama")
+                .output()
+                .map(|o| o.status.success())
+                .unwrap_or(false)
+                || std::process::Command::new("where")
+                    .arg("ollama")
+                    .output()
+                    .map(|o| o.status.success())
+                    .unwrap_or(false);
+
+            DependencyStatus {
+                installed,
+                running: false,
+                version: None,
+                download_url: Some(get_ollama_download_url()),
+            }
+        }
+    }
+}
+
+async fn check_model_exists(model_name: &str) -> bool {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(2))
+        .build()
+        .unwrap();
+
+    if let Ok(response) = client
+        .get("http://localhost:11434/api/tags")
+        .send()
+        .await
+    {
+        if let Ok(data) = response.json::<serde_json::Value>().await {
+            if let Some(models) = data["models"].as_array() {
+                return models
+                    .iter()
+                    .any(|m| m["name"].as_str().map(|n| n.starts_with(model_name)).unwrap_or(false));
+            }
+        }
+    }
+    false
+}
+
+fn check_https_configured() -> bool {
+    // Check if /etc/hosts has dark-gpt.local
+    if let Ok(content) = std::fs::read_to_string("/etc/hosts") {
+        return content.contains("dark-gpt.local");
+    }
+    // Windows hosts file
+    if let Ok(content) =
+        std::fs::read_to_string("C:\\Windows\\System32\\drivers\\etc\\hosts")
+    {
+        return content.contains("dark-gpt.local");
+    }
+    false
+}
+
+fn get_os_version() -> String {
+    #[cfg(target_os = "linux")]
+    {
+        std::fs::read_to_string("/etc/os-release")
+            .ok()
+            .and_then(|content| {
+                content
+                    .lines()
+                    .find(|l| l.starts_with("PRETTY_NAME="))
+                    .map(|l| l.replace("PRETTY_NAME=", "").replace('"', ""))
+            })
+            .unwrap_or_else(|| "Linux".to_string())
+    }
+    #[cfg(target_os = "windows")]
+    {
+        "Windows".to_string()
+    }
+    #[cfg(target_os = "macos")]
+    {
+        "macOS".to_string()
+    }
+}
+
+fn get_docker_download_url() -> String {
+    #[cfg(target_os = "windows")]
+    {
+        "https://desktop.docker.com/win/stable/Docker%20Desktop%20Installer.exe".to_string()
+    }
+    #[cfg(target_os = "linux")]
+    {
+        "https://docs.docker.com/engine/install/ubuntu/".to_string()
+    }
+    #[cfg(target_os = "macos")]
+    {
+        "https://desktop.docker.com/mac/stable/Docker.dmg".to_string()
+    }
+}
+
+fn get_ollama_download_url() -> String {
+    #[cfg(target_os = "windows")]
+    {
+        "https://ollama.com/download/OllamaSetup.exe".to_string()
+    }
+    #[cfg(target_os = "linux")]
+    {
+        "https://ollama.com/install.sh".to_string()
+    }
+    #[cfg(target_os = "macos")]
+    {
+        "https://ollama.com/download/Ollama-darwin.zip".to_string()
+    }
+}
+
+/// Get current setup state
+#[tauri::command]
+pub async fn get_setup_state(app: AppHandle) -> Result<SetupState, String> {
+    let config_dir = app
+        .path()
+        .app_config_dir()
+        .map_err(|e| format!("Config dir error: {}", e))?;
+
+    let setup_file = config_dir.join("setup_complete");
+    let completed = setup_file.exists();
+
+    let prereqs = detect_prerequisites().await?;
+
+    Ok(SetupState {
+        completed,
+        current_step: if completed { 4 } else { 0 },
+        total_steps: 4,
+        prerequisites_ok: prereqs.docker.running && prereqs.ollama.running,
+        model_downloaded: prereqs.model_dolphin,
+        services_configured: prereqs.https_configured,
+    })
+}
+
+/// Save app settings
+#[tauri::command]
+pub async fn save_settings(app: AppHandle, settings: AppSettings) -> Result<(), String> {
+    let config_dir = app
+        .path()
+        .app_config_dir()
+        .map_err(|e| format!("Config dir error: {}", e))?;
+
+    std::fs::create_dir_all(&config_dir)
+        .map_err(|e| format!("Failed to create config dir: {}", e))?;
+
+    let settings_file = config_dir.join("settings.json");
+    let json = serde_json::to_string_pretty(&settings)
+        .map_err(|e| format!("Failed to serialize settings: {}", e))?;
+
+    std::fs::write(&settings_file, json)
+        .map_err(|e| format!("Failed to write settings: {}", e))?;
+
+    // Mark setup as complete
+    let setup_file = config_dir.join("setup_complete");
+    std::fs::write(&setup_file, "1")
+        .map_err(|e| format!("Failed to mark setup complete: {}", e))?;
+
+    tracing::info!("Settings saved to {:?}", settings_file);
+    Ok(())
+}
