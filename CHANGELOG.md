@@ -2,18 +2,31 @@
 
 Toutes les modifications notables de ce projet sont documentées ici.
 
-## [Unreleased]
+## [0.2.0] - 2026-02-02
+
+### Added
+- Scripts Python complets : `test_prompts.py`, `analyze_results.py`, `generate_charts.py`
+- Dataset 50 prompts sensibles (5 catégories)
+- Documentation méthodologie (`docs/methodology.md`)
+- Documentation sécurité (`docs/security.md`)
+- README.md avec instructions d'installation
+
+### Changed
+- BACKLOG.md et ROADMAP.md mis à jour avec progression
+
+## [0.1.0] - 2026-02-02
 
 ### Added
 - Structure projet initiale
-- Docker compose pour Ollama isolé
+- Docker compose pour Ollama isolé (`docker/docker-compose.yml`)
 - CLAUDE.md avec instructions projet
 - BACKLOG.md et ROADMAP.md
+- Modèle dolphin-llama3:8b téléchargé (4.7GB)
 
 ### Security
-- Isolation réseau Docker (--network none)
+- Isolation réseau Docker (`--network none`)
 - Logging local uniquement
-- .gitignore pour données sensibles
+- `.gitignore` pour données sensibles (logs, results)
 
 ---
 
