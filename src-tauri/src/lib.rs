@@ -37,7 +37,7 @@ pub fn run() {
         ])
         .setup(|app| {
             // Log app data directory
-            if let Some(data_dir) = app.path().app_data_dir().ok() {
+            if let Ok(data_dir) = app.path().app_data_dir() {
                 tracing::info!("App data directory: {:?}", data_dir);
             }
             Ok(())
