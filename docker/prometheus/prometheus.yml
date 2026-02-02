@@ -1,0 +1,49 @@
+# Dark-GPT Prometheus Configuration
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+# Alert rules
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+# Scrape configs
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Open-WebUI health (via Docker network)
+  - job_name: 'webui'
+    metrics_path: /health
+    static_configs:
+      - targets: ['webui:8080']
+    # WebUI doesn't expose Prometheus metrics, just health check
+    # This will show UP/DOWN status
+
+  # Ollama on host (if metrics enabled)
+  - job_name: 'ollama'
+    static_configs:
+      - targets: ['host.docker.internal:11434']
+    metrics_path: /api/tags
+    # Ollama doesn't expose Prometheus metrics natively
+    # This is a probe to check availability
+
+  # Docker daemon metrics (if enabled)
+  # Requires: dockerd --metrics-addr=127.0.0.1:9323
+  # - job_name: 'docker'
+  #   static_configs:
+  #     - targets: ['host.docker.internal:9323']
+
+  # Node exporter (if running on host)
+  # - job_name: 'node'
+  #   static_configs:
+  #     - targets: ['host.docker.internal:9100']

@@ -20,6 +20,15 @@
 
 ## ✅ Terminé
 
+### Phase 6 : Déploiement Production-Ready (v0.5.0)
+- [x] HTTPS local avec Caddy + mkcert
+- [x] Authentification Open-WebUI native
+- [x] Scripts déploiement (`deploy.sh`, `setup-https.sh`)
+- [x] Scripts cleanup (`cleanup-logs.sh`, `cleanup-results.sh`)
+- [x] Stack monitoring optionnelle (Prometheus/Grafana)
+- [x] Documentation déploiement (`docs/deployment.md`)
+- [x] ADR Caddy (`docs/adr/0004-caddy-reverse-proxy.md`)
+
 ### Phase 1 : Setup
 - [x] Plan de faisabilité validé
 - [x] Structure projet créée

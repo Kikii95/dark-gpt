@@ -40,7 +40,8 @@
 | M3 : Tests terminés | Semaine 2 | ✅ Terminé |
 | M4 : Analyse complète | Semaine 3 | ✅ Terminé |
 | M5 : Interface Web | Semaine 3 | ✅ Terminé |
-| M6 : Rapport final | Semaine 4+ | 🟡 En cours |
+| M6 : Déploiement prod-ready | Semaine 4 | ✅ Terminé (v0.5.0) |
+| M7 : Rapport final | Semaine 4+ | 🟡 En cours |
 
 ## 📊 Résultats Clés
 

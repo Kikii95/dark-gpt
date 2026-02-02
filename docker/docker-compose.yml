@@ -1,8 +1,56 @@
-version: '3.8'
-
 services:
   # =============================================================
-  # OPTION 1 : Mode Isolé (Tests automatisés, sécurité maximale)
+  # CADDY - Reverse Proxy (HTTPS + Security Headers)
+  # =============================================================
+  caddy:
+    image: caddy:2-alpine
+    container_name: dark-gpt-caddy
+    ports:
+      - "127.0.0.1:443:443"
+      - "127.0.0.1:80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./certs:/etc/caddy/certs:ro
+      - caddy_data:/data
+      - caddy_logs:/var/log/caddy
+    depends_on:
+      webui:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - dark-gpt-network
+
+  # =============================================================
+  # OPEN-WEBUI - Chat Interface (with Authentication)
+  # =============================================================
+  webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: dark-gpt-webui
+    # Port NOT exposed externally - only accessible via Caddy
+    expose:
+      - "8080"
+    volumes:
+      - webui_data:/app/backend/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - WEBUI_AUTH=${WEBUI_AUTH:-true}
+      - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}
+      - DEFAULT_MODELS=${DEFAULT_MODELS:-dolphin-llama3:8b}
+      - ENABLE_SIGNUP=${ENABLE_SIGNUP:-true}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - dark-gpt-network
+
+  # =============================================================
+  # OPTION: Mode Isolé (Tests automatisés, sécurité maximale)
   # Décommenter pour utiliser Ollama en isolation totale
   # =============================================================
   # ollama-isolated:
@@ -21,56 +69,43 @@ services:
   #             capabilities: [gpu]
   #   restart: unless-stopped
 
-  # =============================================================
-  # OPTION 2 : Open-WebUI (Interface web, connecté à Ollama host)
-  # =============================================================
-  webui:
-    image: ghcr.io/open-webui/open-webui:main
-    container_name: dark-gpt-webui
-    ports:
-      - "127.0.0.1:3002:8080"  # Localhost only (3000 utilisé par autre projet)
-    volumes:
-      - webui_data:/app/backend/data
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    environment:
-      - OLLAMA_BASE_URL=http://host.docker.internal:11434
-      - WEBUI_AUTH=false  # Pas d'auth (usage local)
-      - DEFAULT_MODELS=dolphin-llama3:8b
-      - ENABLE_SIGNUP=false
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
 volumes:
-  ollama_data:
   webui_data:
+  caddy_data:
+  caddy_logs:
+  # ollama_data:
+
+networks:
+  dark-gpt-network:
+    driver: bridge
 
 # =============================================================
 # USAGE
 # =============================================================
 #
-# Démarrer Open-WebUI (nécessite Ollama host running):
-#   docker compose up -d
+# 1. Setup HTTPS (first time):
+#    ./scripts/setup-https.sh
 #
-# Accès:
-#   http://localhost:3000
+# 2. Start services:
+#    docker compose up -d
 #
-# Arrêter:
-#   docker compose down
+# 3. Access (HTTPS):
+#    https://dark-gpt.local
 #
-# Logs:
-#   docker compose logs -f webui
+# 4. First user to register becomes admin
+#
+# 5. Stop:
+#    docker compose down
 #
 # =============================================================
-# SÉCURITÉ
+# SECURITY FEATURES
 # =============================================================
 #
-# ✅ Port 3000 bindé sur 127.0.0.1 (localhost only)
-# ✅ Données persistantes dans volume Docker
-# ✅ Pas de telemetry (100% self-hosted)
-# ✅ Auth désactivée (usage local personnel)
-# ✅ Ollama sur host = pas de GPU dans container
+# ✅ HTTPS via Caddy with mkcert certificates
+# ✅ Authentication enabled (WEBUI_AUTH=true)
+# ✅ Port 443/80 bound to localhost only
+# ✅ WebUI not directly exposed (only via Caddy)
+# ✅ Security headers (XSS, HSTS, etc.)
+# ✅ Health checks
+# ✅ Separate Docker network
+#

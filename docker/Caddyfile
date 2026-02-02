@@ -1,0 +1,55 @@
+# Dark-GPT Reverse Proxy Configuration
+#
+# Features:
+# - HTTPS with local mkcert certificates
+# - Security headers
+# - Proxy to Open-WebUI
+
+{
+    # Global options
+    admin off
+    auto_https off
+}
+
+https://dark-gpt.local:443 {
+    # TLS with local certificates
+    tls /etc/caddy/certs/dark-gpt.local.pem /etc/caddy/certs/dark-gpt.local-key.pem
+
+    # Security headers
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        -Server
+    }
+
+    # Proxy to Open-WebUI
+    reverse_proxy webui:8080 {
+        # Health checks
+        health_uri /health
+        health_interval 30s
+        health_timeout 5s
+
+        # Headers
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # Logging
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 10mb
+            roll_keep 5
+        }
+        format json
+    }
+}
+
+# HTTP redirect to HTTPS
+http://dark-gpt.local:80 {
+    redir https://dark-gpt.local{uri} permanent
+}

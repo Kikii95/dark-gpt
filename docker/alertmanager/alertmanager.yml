@@ -1,0 +1,39 @@
+# Dark-GPT Alertmanager Configuration
+#
+# Configure Discord webhook URL in docker/.env:
+#   DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/xxx/yyy
+
+global:
+  resolve_timeout: 5m
+
+# Route configuration
+route:
+  group_by: ['alertname', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: 'discord'
+  routes:
+    - match:
+        severity: critical
+      receiver: 'discord'
+      repeat_interval: 1h
+
+# Receivers
+receivers:
+  - name: 'discord'
+    webhook_configs:
+      # Discord webhook (configure in .env)
+      # To get webhook URL:
+      # 1. Discord Server Settings > Integrations > Webhooks
+      # 2. New Webhook > Copy URL
+      - url: '${DISCORD_WEBHOOK_URL:-http://localhost:9999}'
+        send_resolved: true
+
+# Inhibition rules
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname']

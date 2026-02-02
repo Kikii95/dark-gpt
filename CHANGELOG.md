@@ -2,6 +2,63 @@
 
 Toutes les modifications notables de ce projet sont documentées ici.
 
+## [0.5.0] - 2026-02-02
+
+### Added
+- **HTTPS** : Reverse proxy Caddy avec certificats mkcert
+  - Accès sécurisé : https://dark-gpt.local
+  - Headers sécurité (HSTS, X-Frame-Options, etc.)
+- **Authentification** : Open-WebUI native (`WEBUI_AUTH=true`)
+  - Premier utilisateur = admin automatique
+  - Gestion utilisateurs intégrée
+- **Scripts déploiement** :
+  - `scripts/deploy.sh` : Orchestration complète
+  - `scripts/setup-https.sh` : Installation certificats mkcert
+  - `scripts/cleanup-logs.sh` : Purge logs > 7 jours
+  - `scripts/cleanup-results.sh` : Archive results > 30 jours
+- **Monitoring stack** (optionnel) :
+  - Prometheus : Collecte métriques
+  - Grafana : Dashboards
+  - Alertmanager : Alertes Discord
+- **Documentation** :
+  - `docs/deployment.md` : Guide déploiement complet
+  - `docs/adr/0004-caddy-reverse-proxy.md` : ADR Caddy
+
+### Changed
+- `docker-compose.yml` : WebUI exposé uniquement via Caddy (port 8080 interne)
+- Secrets externalisés dans `docker/.env`
+
+### Security
+- Port 443/80 bindés sur localhost uniquement
+- WebUI non exposé directement (via Caddy uniquement)
+- Cleanup automatique disponible via cron
+
+## [0.4.0] - 2026-02-02
+
+### Added
+- **Tests unitaires** : Structure `tests/` complète avec pytest
+  - `conftest.py` avec fixtures réutilisables
+  - Tests pour `test_prompts.py`, `analyze_results.py`, `generate_charts.py`
+- **ADRs** : Architecture Decision Records (`docs/adr/`)
+  - `0001-network-isolation.md` : Isolation réseau Docker
+  - `0002-local-logging.md` : Logging local JSONL
+  - `0003-model-selection.md` : Choix Dolphin uncensored
+- **Scripts centralisés** : `~/tools/scripts/dark-gpt/`
+  - `dark-gpt-dev.sh` : Démarrage Ollama + Open-WebUI
+  - `dark-gpt-stop.sh` : Arrêt services
+  - `dark-gpt-status.sh` : Status check
+  - `dark-gpt-restart.sh` : Redémarrage complet
+- **Wrappers** : `.claude/*.sh` (start, stop, status, restart)
+- **Pre-commit** : Configuration `.pre-commit-config.yaml`
+  - Ruff (lint + format)
+  - Trailing whitespace, EOF fixer, YAML/JSON check
+  - Private key detection
+- **Requirements** : `requirements.txt` avec dépendances
+- **Sync Obsidian** : Docs Git synchronisés vers Obsidian (Trigger #21)
+
+### Changed
+- Grade audit v14 : 🟠 B (8/18) → 🟢 A (14/18)
+
 ## [0.3.0] - 2026-02-02
 
 ### Added
