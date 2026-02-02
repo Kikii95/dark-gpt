@@ -1,0 +1,17 @@
+# Build outputs
+dist/
+target/
+
+# Generated files
+src-tauri/gen/
+
+# Dependencies
+node_modules/
+
+# Cargo
+Cargo.lock
+
+# Misc
+*.md
+*.yml
+*.yaml
