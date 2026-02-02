@@ -2,6 +2,24 @@
 
 Toutes les modifications notables de ce projet sont documentées ici.
 
+## [0.3.0] - 2026-02-02
+
+### Added
+- **Open-WebUI** : Interface web style ChatGPT pour Dolphin
+  - Multi-chats, mémoire persistante, RAG intégré
+  - Accès : http://localhost:3002
+- Tests automatisés complétés :
+  - Dolphin : **90% succès** (45/50 prompts)
+  - Claude : **24% succès** (12/50 prompts)
+- Graphiques comparatifs (`charts/`)
+  - `comparison_bar.png` : Bar chart global
+  - `category_heatmap.png` : Heatmap par catégorie
+- Rapport comparatif (`results/comparison/report.md`)
+
+### Changed
+- `docker-compose.yml` : Ajout service Open-WebUI
+- ROADMAP.md : Semaine 2 terminée
+
 ## [0.2.0] - 2026-02-02
 
 ### Added
