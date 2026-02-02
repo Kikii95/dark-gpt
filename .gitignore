@@ -1,0 +1,47 @@
+# Logs sensibles
+logs/*.jsonl
+logs/*.json
+logs/*.log
+
+# Résultats bruts (peuvent contenir du contenu sensible)
+results/**/*.jsonl
+results/**/*.json
+
+# Environnement Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker/data/
+
+# Secrets
+.env
+.env.local
+*.key
+*.pem
+
+# Rapport draft (garder seulement final)
+docs/report/draft_*.md
+
+# Charts générés (regénérables)
+charts/*.png
+charts/*.svg
+
+# Temporaire
+tmp/
+*.tmp
+*.bak

@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: dark-gpt-ollama
+    # SÉCURITÉ : Isolation réseau totale
+    network_mode: "none"
+    volumes:
+      - ollama_data:/root/.ollama
+      # Mount pour les modèles (optionnel si déjà téléchargés)
+      - ~/.ollama:/root/.ollama:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    # Pas de ports exposés = isolation maximale
+
+  # Interface Web optionnelle (commenter si pas besoin)
+  # open-webui:
+  #   image: ghcr.io/open-webui/open-webui:main
+  #   container_name: dark-gpt-webui
+  #   network_mode: "host"  # Accès local seulement
+  #   volumes:
+  #     - webui_data:/app/backend/data
+  #   environment:
+  #     - OLLAMA_BASE_URL=http://localhost:11434
+  #   ports:
+  #     - "127.0.0.1:3000:8080"
+  #   depends_on:
+  #     - ollama
+  #   restart: unless-stopped
+
+volumes:
+  ollama_data:
+  # webui_data:
