@@ -1,6 +1,6 @@
 [package]
 name = "dark-gpt"
-version = "0.6.0"
+version = "0.6.1"
 description = "Dark-GPT Desktop - Uncensored AI Assistant"
 authors = ["kiki"]
 edition = "2021"

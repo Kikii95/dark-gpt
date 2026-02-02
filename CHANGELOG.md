@@ -2,6 +2,33 @@
 
 Toutes les modifications notables de ce projet sont documentées ici.
 
+## [0.6.1] - 2026-02-02
+
+### Added
+- **Model Selection** : Dropdown pour choisir le modèle IA
+  - 3 modèles Dolphin disponibles (phi, llama3:8b, mixtral:8x7b)
+  - Taille et RAM requise affichées
+  - Indicateur visuel du modèle recommandé (⭐)
+  - Détection automatique des modèles déjà installés
+- **Backend** :
+  - `AvailableModel` struct avec metadata (size, ram, recommended)
+  - `get_available_models()` command Tauri
+  - `installed_models: Vec<String>` dans Prerequisites
+  - `get_installed_dolphin_models()` helper function
+- **Frontend** :
+  - Interface `AvailableModel` TypeScript
+  - State `availableModels` et `selectedModel`
+  - Dropdown select avec options dynamiques
+
+### Changed
+- `downloadModel()` prend maintenant le modèle sélectionné en paramètre
+- UI Setup Wizard avec sélecteur au lieu du bouton hardcodé
+- Progress bar affiche le nom du modèle en cours
+
+### Documentation
+- Reorganisation Obsidian (`_Projet/`, `_Recherche/`, `_Features/`, `_QA/`)
+- Note `Feature-Model-Selection.md` créée
+
 ## [0.6.0] - 2026-02-02
 
 ### Added

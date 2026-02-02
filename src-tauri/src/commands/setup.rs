@@ -9,6 +9,7 @@ pub struct Prerequisites {
     pub docker: DependencyStatus,
     pub ollama: DependencyStatus,
     pub model_dolphin: bool,
+    pub installed_models: Vec<String>,
     pub https_configured: bool,
 }
 
@@ -44,6 +45,39 @@ pub struct AppSettings {
     pub check_updates: bool,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AvailableModel {
+    pub name: String,
+    pub size: String,
+    pub ram_required: String,
+    pub recommended: bool,
+}
+
+/// Get list of available Dolphin models
+#[tauri::command]
+pub fn get_available_models() -> Vec<AvailableModel> {
+    vec![
+        AvailableModel {
+            name: "dolphin-phi".into(),
+            size: "1.6 GB".into(),
+            ram_required: "4 GB".into(),
+            recommended: false,
+        },
+        AvailableModel {
+            name: "dolphin-llama3:8b".into(),
+            size: "4.7 GB".into(),
+            ram_required: "8 GB".into(),
+            recommended: true,
+        },
+        AvailableModel {
+            name: "dolphin-mixtral:8x7b".into(),
+            size: "26 GB".into(),
+            ram_required: "32 GB".into(),
+            recommended: false,
+        },
+    ]
+}
+
 /// Detect system prerequisites
 #[tauri::command]
 pub async fn detect_prerequisites() -> Result<Prerequisites, String> {
@@ -62,8 +96,9 @@ pub async fn detect_prerequisites() -> Result<Prerequisites, String> {
     // Ollama status
     let ollama = detect_ollama().await;
 
-    // Check if dolphin model exists
-    let model_dolphin = check_model_exists("dolphin-llama3:8b").await;
+    // Get installed dolphin models
+    let installed_models = get_installed_dolphin_models().await;
+    let model_dolphin = installed_models.iter().any(|m| m.starts_with("dolphin-llama3:8b"));
 
     // Check HTTPS configuration
     let https_configured = check_https_configured();
@@ -73,6 +108,7 @@ pub async fn detect_prerequisites() -> Result<Prerequisites, String> {
         docker,
         ollama,
         model_dolphin,
+        installed_models,
         https_configured,
     })
 }
@@ -152,7 +188,7 @@ async fn detect_ollama() -> DependencyStatus {
     }
 }
 
-async fn check_model_exists(model_name: &str) -> bool {
+async fn get_installed_dolphin_models() -> Vec<String> {
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(2))
         .build()
@@ -167,11 +203,13 @@ async fn check_model_exists(model_name: &str) -> bool {
             if let Some(models) = data["models"].as_array() {
                 return models
                     .iter()
-                    .any(|m| m["name"].as_str().map(|n| n.starts_with(model_name)).unwrap_or(false));
+                    .filter_map(|m| m["name"].as_str().map(|s| s.to_string()))
+                    .filter(|name| name.starts_with("dolphin"))
+                    .collect();
             }
         }
     }
-    false
+    vec![]
 }
 
 fn check_https_configured() -> bool {

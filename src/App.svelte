@@ -8,6 +8,7 @@
     docker: { installed: boolean; running: boolean; version?: string; download_url?: string };
     ollama: { installed: boolean; running: boolean; version?: string; download_url?: string };
     model_dolphin: boolean;
+    installed_models: string[];
     https_configured: boolean;
   }
 
@@ -25,6 +26,13 @@
     percent: number;
   }
 
+  interface AvailableModel {
+    name: string;
+    size: string;
+    ram_required: string;
+    recommended: boolean;
+  }
+
   let loading = $state(true);
   let loadingMessage = $state('Checking system...');
   let error = $state<string | null>(null);
@@ -33,6 +41,10 @@
   let webuiUrl = $state('https://dark-gpt.local');
   let showSetup = $state(true);
   let servicesRunning = $state(false);
+
+  // Model selection state
+  let availableModels = $state<AvailableModel[]>([]);
+  let selectedModel = $state('dolphin-llama3:8b');
 
   // Model download state
   let downloadingModel = $state(false);
@@ -46,6 +58,9 @@
       unlistenProgress = await listen<DownloadProgress>('model-download-progress', (event) => {
         downloadProgress = event.payload;
       });
+
+      // Load available models
+      availableModels = await invoke<AvailableModel[]>('get_available_models');
 
       // Check prerequisites
       prerequisites = await invoke<Prerequisites>('detect_prerequisites');
@@ -87,18 +102,20 @@
     }
   }
 
-  async function downloadModel() {
+  async function downloadModel(modelName?: string) {
+    const model = modelName || selectedModel;
+
     if (!prerequisites?.ollama.running) {
       error = 'Ollama must be running to download models';
       return;
     }
 
     downloadingModel = true;
-    downloadProgress = { status: 'Starting...', completed: 0, total: 0, percent: 0 };
+    downloadProgress = { status: `Starting ${model}...`, completed: 0, total: 0, percent: 0 };
     error = null;
 
     try {
-      await invoke('pull_model', { modelName: 'dolphin-llama3:8b' });
+      await invoke('pull_model', { modelName: model });
       // Refresh prerequisites to update model status
       prerequisites = await invoke<Prerequisites>('detect_prerequisites');
     } catch (e) {
@@ -236,21 +253,35 @@
               {/if}
             </div>
 
-            <!-- Model -->
+            <!-- Model Selection -->
             <div class="p-3 bg-dark-700 rounded-lg">
+              <label for="model-select" class="block text-sm text-gray-400 mb-2">Select AI Model:</label>
+              <select
+                id="model-select"
+                bind:value={selectedModel}
+                class="w-full bg-dark-600 border border-dark-500 rounded p-2 mb-3 text-white"
+                disabled={downloadingModel}
+              >
+                {#each availableModels as model}
+                  <option value={model.name}>
+                    {model.name} (~{model.size}) - {model.ram_required} RAM {model.recommended ? '⭐' : ''}
+                  </option>
+                {/each}
+              </select>
+
               <div class="flex items-center justify-between">
-                <span>dolphin-llama3:8b</span>
-                {#if prerequisites.model_dolphin}
-                  <span class="text-green-400">✓ Ready</span>
+                <span class="text-sm">{selectedModel}</span>
+                {#if prerequisites.installed_models?.some(m => m.startsWith(selectedModel))}
+                  <span class="text-green-400">✓ Installed</span>
                 {:else if downloadingModel}
                   <span class="text-blue-400">Downloading...</span>
                 {:else}
                   <button
                     class="px-3 py-1 bg-accent-600 hover:bg-accent-700 rounded text-sm disabled:opacity-50"
-                    onclick={downloadModel}
+                    onclick={() => downloadModel()}
                     disabled={!prerequisites.ollama.running}
                   >
-                    Download (~4.7 GB)
+                    Download
                   </button>
                 {/if}
               </div>

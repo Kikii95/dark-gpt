@@ -15,7 +15,7 @@ pub fn run() {
         .with(EnvFilter::from_default_env().add_directive("dark_gpt=debug".parse().unwrap()))
         .init();
 
-    tracing::info!("Starting Dark-GPT Desktop v0.6.0");
+    tracing::info!("Starting Dark-GPT Desktop v0.6.1");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
@@ -33,6 +33,7 @@ pub fn run() {
             commands::setup::detect_prerequisites,
             commands::setup::get_setup_state,
             commands::setup::save_settings,
+            commands::setup::get_available_models,
         ])
         .setup(|app| {
             // Log app data directory
