@@ -11,12 +11,14 @@ Accepté
 ## Context
 
 Le projet nécessite un reverse proxy pour :
+
 - Terminer le TLS (HTTPS) avec certificats locaux
 - Ajouter des headers de sécurité
 - Cacher Open-WebUI derrière une couche de sécurité
 - Potentiellement ajouter du rate limiting
 
 Options considérées :
+
 1. **Nginx** : Standard de l'industrie, très flexible
 2. **Caddy** : Configuration simple, HTTPS automatique
 3. **Traefik** : Orienté Docker, configuration dynamique
@@ -74,6 +76,7 @@ https://dark-gpt.local:443 {
 ### Nginx
 
 Rejeté car :
+
 - Configuration TLS verbeux
 - Nécessite certbot ou config manuelle pour certificats
 - Overkill pour usage local
@@ -81,6 +84,7 @@ Rejeté car :
 ### Traefik
 
 Rejeté car :
+
 - Configuration YAML complexe
 - Orienté orchestration (Kubernetes/Swarm)
 - Overkill pour 2 services

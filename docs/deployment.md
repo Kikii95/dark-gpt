@@ -79,13 +79,13 @@ docker compose down && docker compose up -d
 
 ## Sécurité
 
-| Mesure | Description |
-|--------|-------------|
-| HTTPS | Caddy avec certificats mkcert |
-| Auth | Open-WebUI native |
-| Ports | 443/80 sur localhost uniquement |
-| Headers | X-Frame-Options, HSTS, XSS-Protection |
-| Isolation | WebUI non exposé directement |
+| Mesure    | Description                           |
+| --------- | ------------------------------------- |
+| HTTPS     | Caddy avec certificats mkcert         |
+| Auth      | Open-WebUI native                     |
+| Ports     | 443/80 sur localhost uniquement       |
+| Headers   | X-Frame-Options, HSTS, XSS-Protection |
+| Isolation | WebUI non exposé directement          |
 
 ## Monitoring (Optionnel)
 
@@ -111,12 +111,12 @@ DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/xxx/yyy
 
 ## Scripts
 
-| Script | Description |
-|--------|-------------|
-| `scripts/deploy.sh` | Déploiement complet |
-| `scripts/setup-https.sh` | Configuration HTTPS/certificats |
-| `scripts/cleanup-logs.sh` | Purge logs > 7 jours |
-| `scripts/cleanup-results.sh` | Archive results > 30 jours |
+| Script                       | Description                     |
+| ---------------------------- | ------------------------------- |
+| `scripts/deploy.sh`          | Déploiement complet             |
+| `scripts/setup-https.sh`     | Configuration HTTPS/certificats |
+| `scripts/cleanup-logs.sh`    | Purge logs > 7 jours            |
+| `scripts/cleanup-results.sh` | Archive results > 30 jours      |
 
 ### Cron Jobs (Optionnel)
 

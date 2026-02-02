@@ -37,34 +37,35 @@ Ce document décrit les mesures de sécurité mises en place pour isoler le LLM 
 
 ### 1. Isolation réseau
 
-| Mesure | Implémentation |
-|--------|----------------|
-| Docker network mode | `--network none` |
-| Ports exposés | Aucun (0) |
-| Accès internet | ❌ Impossible |
-| DNS | ❌ Non disponible |
+| Mesure              | Implémentation    |
+| ------------------- | ----------------- |
+| Docker network mode | `--network none`  |
+| Ports exposés       | Aucun (0)         |
+| Accès internet      | ❌ Impossible     |
+| DNS                 | ❌ Non disponible |
 
 **Commande Docker** :
+
 ```bash
 docker run --network none ollama/ollama
 ```
 
 ### 2. Isolation des données
 
-| Mesure | Implémentation |
-|--------|----------------|
-| Logs | Local uniquement (pas de cloud) |
-| .gitignore | Exclut logs/ et results/ |
-| Secrets | Aucun secret dans le code |
-| PII | Jamais de vraies données personnelles |
+| Mesure     | Implémentation                        |
+| ---------- | ------------------------------------- |
+| Logs       | Local uniquement (pas de cloud)       |
+| .gitignore | Exclut logs/ et results/              |
+| Secrets    | Aucun secret dans le code             |
+| PII        | Jamais de vraies données personnelles |
 
 ### 3. Contrôle d'accès
 
-| Mesure | Implémentation |
-|--------|----------------|
-| Ports localhost | 127.0.0.1 uniquement |
-| Pare-feu | UFW règles restrictives |
-| Permissions | User-only (pas de root) |
+| Mesure          | Implémentation          |
+| --------------- | ----------------------- |
+| Ports localhost | 127.0.0.1 uniquement    |
+| Pare-feu        | UFW règles restrictives |
+| Permissions     | User-only (pas de root) |
 
 ## Procédures
 
@@ -105,12 +106,12 @@ ollama rm dolphin-llama3:8b
 
 ## Risques et mitigations
 
-| Risque | Probabilité | Impact | Mitigation |
-|--------|-------------|--------|------------|
-| Fuite de données | Faible | Moyen | Logs locaux, .gitignore |
-| Accès non autorisé | Très faible | Élevé | Localhost only, pas de ports |
-| Utilisation malveillante | Faible | Élevé | Contexte académique documenté |
-| Réponses persistantes | Moyen | Faible | Cleanup script |
+| Risque                   | Probabilité | Impact | Mitigation                    |
+| ------------------------ | ----------- | ------ | ----------------------------- |
+| Fuite de données         | Faible      | Moyen  | Logs locaux, .gitignore       |
+| Accès non autorisé       | Très faible | Élevé  | Localhost only, pas de ports  |
+| Utilisation malveillante | Faible      | Élevé  | Contexte académique documenté |
+| Réponses persistantes    | Moyen       | Faible | Cleanup script                |
 
 ## Conformité
 
@@ -145,6 +146,7 @@ grep -l "password\|credential" logs/*.jsonl
 ## Contact d'urgence
 
 En cas de découverte de vulnérabilité ou d'incident :
+
 1. Arrêter immédiatement les containers
 2. Isoler les logs
 3. Contacter le superviseur académique

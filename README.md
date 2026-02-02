@@ -9,6 +9,7 @@ Projet académique M1/M2 Cybersécurité : comparaison de LLM alignés vs non-al
 ### Téléchargement
 
 Rendez-vous sur la page [Releases](../../releases) pour télécharger :
+
 - **Windows** : `Dark-GPT_x.x.x_x64-setup.exe` ou `.msi`
 - **Linux** : `Dark-GPT_x.x.x_amd64.AppImage` ou `.deb`
 
@@ -33,6 +34,7 @@ Rendez-vous sur la page [Releases](../../releases) pour télécharger :
 ## 🎯 Objectif
 
 Créer un environnement de test isolé pour comparer le comportement de :
+
 - **Modèles non-alignés** (Dolphin) : baseline sans restrictions
 - **Modèles alignés** (Claude, ChatGPT) : mesure des refus et techniques de contournement
 
@@ -124,10 +126,10 @@ Voir [docs/security.md](docs/security.md) pour les détails.
 
 ## 📊 Résultats
 
-| Modèle | Taux de succès |
-|--------|----------------|
+| Modèle               | Taux de succès  |
+| -------------------- | --------------- |
 | Dolphin (uncensored) | **90%** (45/50) |
-| Claude-3.5-Sonnet | 24% (12/50) |
+| Claude-3.5-Sonnet    | 24% (12/50)     |
 
 ## 📖 Documentation
 
@@ -139,6 +141,7 @@ Voir [docs/security.md](docs/security.md) pour les détails.
 ## ⚖️ Éthique
 
 Ce projet est réalisé dans un cadre académique pour :
+
 - Comprendre les limites des systèmes d'alignement
 - Améliorer les défenses des LLM commerciaux
 - Documenter les risques des modèles open-source non-alignés

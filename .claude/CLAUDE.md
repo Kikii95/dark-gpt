@@ -19,13 +19,13 @@ dark-gpt/
 
 ## 🔧 Stack Technique
 
-| Composant | Technologie |
-|-----------|-------------|
-| LLM Local | Ollama + dolphin-llama3:8b |
-| Isolation | Docker (--network none) |
-| Scripts | Python 3.11+ |
-| Logs | JSONL (timestamp, prompt, response, category) |
-| Analyse | pandas + matplotlib |
+| Composant | Technologie                                   |
+| --------- | --------------------------------------------- |
+| LLM Local | Ollama + dolphin-llama3:8b                    |
+| Isolation | Docker (--network none)                       |
+| Scripts   | Python 3.11+                                  |
+| Logs      | JSONL (timestamp, prompt, response, category) |
+| Analyse   | pandas + matplotlib                           |
 
 ## 🛡️ Règles de Sécurité
 
@@ -38,18 +38,20 @@ dark-gpt/
 ## 📚 Docs à Maintenir
 
 ### Docs Git (source) → sync Obsidian
-| Doc | Chemin Git | Quand mettre à jour |
-|-----|------------|---------------------|
-| Backlog | `BACKLOG.md` | Nouvelles tâches |
-| Roadmap | `ROADMAP.md` | Planning |
-| Changelog | `CHANGELOG.md` | Chaque milestone |
+
+| Doc       | Chemin Git     | Quand mettre à jour |
+| --------- | -------------- | ------------------- |
+| Backlog   | `BACKLOG.md`   | Nouvelles tâches    |
+| Roadmap   | `ROADMAP.md`   | Planning            |
+| Changelog | `CHANGELOG.md` | Chaque milestone    |
 
 ### Docs Obsidian-only
-| Doc | Chemin Obsidian | Quand mettre à jour |
-|-----|-----------------|---------------------|
-| Faisabilité | `~/obsidian-vault/Projects/Perso/dark-gpt/Faisabilite.md` | Jamais (figé) |
-| Results | `~/obsidian-vault/Projects/Perso/dark-gpt/Results.md` | Après tests |
-| Logs | `~/obsidian-vault/Projects/Perso/dark-gpt/_Logs/` | Chaque session |
+
+| Doc         | Chemin Obsidian                                           | Quand mettre à jour |
+| ----------- | --------------------------------------------------------- | ------------------- |
+| Faisabilité | `~/obsidian-vault/Projects/Perso/dark-gpt/Faisabilite.md` | Jamais (figé)       |
+| Results     | `~/obsidian-vault/Projects/Perso/dark-gpt/Results.md`     | Après tests         |
+| Logs        | `~/obsidian-vault/Projects/Perso/dark-gpt/_Logs/`         | Chaque session      |
 
 ## 🚀 Commandes Rapides
 

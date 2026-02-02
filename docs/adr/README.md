@@ -4,11 +4,11 @@ Documentation des décisions architecturales importantes du projet Dark-GPT.
 
 ## Index
 
-| ADR | Titre | Statut | Date |
-|-----|-------|--------|------|
-| [0001](0001-network-isolation.md) | Isolation Réseau Docker | Accepted | 2025-02-02 |
-| [0002](0002-local-logging.md) | Logging Local JSONL | Accepted | 2025-02-02 |
-| [0003](0003-model-selection.md) | Choix Dolphin Uncensored | Accepted | 2025-02-02 |
+| ADR                               | Titre                    | Statut   | Date       |
+| --------------------------------- | ------------------------ | -------- | ---------- |
+| [0001](0001-network-isolation.md) | Isolation Réseau Docker  | Accepted | 2025-02-02 |
+| [0002](0002-local-logging.md)     | Logging Local JSONL      | Accepted | 2025-02-02 |
+| [0003](0003-model-selection.md)   | Choix Dolphin Uncensored | Accepted | 2025-02-02 |
 
 ## Format ADR
 

@@ -17,22 +17,22 @@ rule_files:
 # Scrape configs
 scrape_configs:
   # Prometheus self-monitoring
-  - job_name: 'prometheus'
+  - job_name: "prometheus"
     static_configs:
-      - targets: ['localhost:9090']
+      - targets: ["localhost:9090"]
 
   # Open-WebUI health (via Docker network)
-  - job_name: 'webui'
+  - job_name: "webui"
     metrics_path: /health
     static_configs:
-      - targets: ['webui:8080']
+      - targets: ["webui:8080"]
     # WebUI doesn't expose Prometheus metrics, just health check
     # This will show UP/DOWN status
 
   # Ollama on host (if metrics enabled)
-  - job_name: 'ollama'
+  - job_name: "ollama"
     static_configs:
-      - targets: ['host.docker.internal:11434']
+      - targets: ["host.docker.internal:11434"]
     metrics_path: /api/tags
     # Ollama doesn't expose Prometheus metrics natively
     # This is a probe to check availability

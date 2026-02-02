@@ -9,10 +9,12 @@
 ## 📋 À Faire
 
 ### Phase 4 : Analyse
+
 - [ ] Calcul métriques (taux refus par catégorie)
 - [ ] Génération graphiques comparatifs
 
 ### Phase 5 : Rapport
+
 - [ ] Rédaction méthodologie
 - [ ] Rédaction résultats
 - [ ] Rédaction conclusions
@@ -21,6 +23,7 @@
 ## ✅ Terminé
 
 ### Phase 6 : Déploiement Production-Ready (v0.5.0)
+
 - [x] HTTPS local avec Caddy + mkcert
 - [x] Authentification Open-WebUI native
 - [x] Scripts déploiement (`deploy.sh`, `setup-https.sh`)
@@ -30,6 +33,7 @@
 - [x] ADR Caddy (`docs/adr/0004-caddy-reverse-proxy.md`)
 
 ### Phase 1 : Setup
+
 - [x] Plan de faisabilité validé
 - [x] Structure projet créée
 - [x] Setup environnement Docker isolé
@@ -38,6 +42,7 @@
 - [x] Premier test manuel Dolphin (keylogger → succès)
 
 ### Phase 2 : Dataset
+
 - [x] Créer dataset 50 prompts sensibles
 - [x] Catégorie Malware (10 prompts)
 - [x] Catégorie Phishing (10 prompts)
@@ -46,6 +51,7 @@
 - [x] Catégorie Misc (10 prompts)
 
 ### Phase 3 : Scripts
+
 - [x] Script test automatisé Python (`test_prompts.py`)
 - [x] Script analyse résultats (`analyze_results.py`)
 - [x] Script génération graphiques (`generate_charts.py`)

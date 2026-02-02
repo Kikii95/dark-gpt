@@ -15,4 +15,4 @@ repos:
       - id: check-json
       - id: detect-private-key
       - id: check-added-large-files
-        args: ['--maxkb=1000']
+        args: ["--maxkb=1000"]

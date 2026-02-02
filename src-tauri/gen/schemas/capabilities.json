@@ -1,1 +1,20 @@
-{"main":{"identifier":"main","description":"Main capability for Dark-GPT","local":true,"windows":["main"],"permissions":["core:default","shell:allow-open","shell:allow-execute",{"identifier":"shell:allow-spawn","allow":[{"args":true,"cmd":"docker","name":"docker"},{"args":["compose"],"cmd":"docker","name":"docker-compose"}]}]}}
+{
+  "main": {
+    "identifier": "main",
+    "description": "Main capability for Dark-GPT",
+    "local": true,
+    "windows": ["main"],
+    "permissions": [
+      "core:default",
+      "shell:allow-open",
+      "shell:allow-execute",
+      {
+        "identifier": "shell:allow-spawn",
+        "allow": [
+          { "args": true, "cmd": "docker", "name": "docker" },
+          { "args": ["compose"], "cmd": "docker", "name": "docker-compose" }
+        ]
+      }
+    ]
+  }
+}
