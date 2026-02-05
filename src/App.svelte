@@ -26,6 +26,15 @@
     percent: number;
   }
 
+  interface InstallProgress {
+    dependency: string;
+    phase: string;
+    downloaded: number;
+    total: number;
+    percent: number;
+    message: string;
+  }
+
   interface AvailableModel {
     name: string;
     size: string;
@@ -50,13 +59,23 @@
   let downloadingModel = $state(false);
   let downloadProgress = $state<DownloadProgress | null>(null);
 
+  // Dependency install state
+  let installingDependency = $state<string | null>(null);
+  let installProgress = $state<InstallProgress | null>(null);
+
   let unlistenProgress: UnlistenFn | null = null;
+  let unlistenInstall: UnlistenFn | null = null;
 
   onMount(async () => {
     try {
       // Set up event listener for model download progress
       unlistenProgress = await listen<DownloadProgress>('model-download-progress', (event) => {
         downloadProgress = event.payload;
+      });
+
+      // Set up event listener for dependency install progress
+      unlistenInstall = await listen<InstallProgress>('install-progress', (event) => {
+        installProgress = event.payload;
       });
 
       // Load available models
@@ -84,9 +103,8 @@
   });
 
   onDestroy(() => {
-    if (unlistenProgress) {
-      unlistenProgress();
-    }
+    if (unlistenProgress) unlistenProgress();
+    if (unlistenInstall) unlistenInstall();
   });
 
   async function refreshPrerequisites() {
@@ -164,6 +182,21 @@
     window.open(url, '_blank');
   }
 
+  async function installDependency(dep: 'ollama' | 'docker') {
+    installingDependency = dep;
+    installProgress = null;
+    error = null;
+    try {
+      await invoke(dep === 'ollama' ? 'install_ollama' : 'install_docker');
+      await refreshPrerequisites();
+    } catch (e) {
+      error = String(e);
+    } finally {
+      installingDependency = null;
+      installProgress = null;
+    }
+  }
+
   function formatBytes(bytes: number): string {
     if (bytes === 0) return '0 B';
     const k = 1024;
@@ -220,36 +253,96 @@
             </div>
 
             <!-- Docker -->
-            <div class="flex items-center justify-between p-3 bg-dark-700 rounded-lg">
-              <span>Docker</span>
-              {#if prerequisites.docker.running}
-                <span class="text-green-400">✓ v{prerequisites.docker.version}</span>
-              {:else if prerequisites.docker.installed}
-                <span class="text-yellow-400">⚠ Not running</span>
-              {:else}
-                <button
-                  class="px-3 py-1 bg-accent-600 hover:bg-accent-700 rounded text-sm"
-                  onclick={() => prerequisites?.docker.download_url && openDownload(prerequisites.docker.download_url)}
-                >
-                  Install
-                </button>
+            <div class="p-3 bg-dark-700 rounded-lg">
+              <div class="flex items-center justify-between">
+                <span>Docker</span>
+                {#if prerequisites.docker.running}
+                  <span class="text-green-400">✓ v{prerequisites.docker.version}</span>
+                {:else if prerequisites.docker.installed}
+                  <span class="text-yellow-400">⚠ Not running</span>
+                {:else if installingDependency === 'docker'}
+                  <span class="text-blue-400 text-sm">Installing...</span>
+                {:else}
+                  <button
+                    class="px-3 py-1 bg-accent-600 hover:bg-accent-700 rounded text-sm disabled:opacity-50"
+                    onclick={() => installDependency('docker')}
+                    disabled={!!installingDependency || downloadingModel}
+                  >
+                    Download & Install
+                  </button>
+                {/if}
+              </div>
+              {#if installingDependency === 'docker' && installProgress}
+                <div class="mt-2">
+                  <div class="flex justify-between text-sm text-gray-400 mb-1">
+                    <span class="truncate mr-2">{installProgress.message}</span>
+                    {#if installProgress.phase === 'downloading' && installProgress.total > 0}
+                      <span class="shrink-0">{installProgress.percent.toFixed(1)}%</span>
+                    {/if}
+                  </div>
+                  <div class="w-full bg-dark-600 rounded-full h-2">
+                    {#if installProgress.phase === 'downloading' && installProgress.total > 0}
+                      <div
+                        class="bg-accent-500 h-2 rounded-full transition-all duration-300"
+                        style="width: {installProgress.percent}%"
+                      ></div>
+                    {:else}
+                      <div class="bg-accent-500 h-2 rounded-full animate-pulse w-full"></div>
+                    {/if}
+                  </div>
+                  {#if installProgress.phase === 'downloading' && installProgress.total > 0}
+                    <div class="text-xs text-gray-500 mt-1">
+                      {formatBytes(installProgress.downloaded)} / {formatBytes(installProgress.total)}
+                    </div>
+                  {/if}
+                </div>
               {/if}
             </div>
 
             <!-- Ollama -->
-            <div class="flex items-center justify-between p-3 bg-dark-700 rounded-lg">
-              <span>Ollama</span>
-              {#if prerequisites.ollama.running}
-                <span class="text-green-400">✓ v{prerequisites.ollama.version}</span>
-              {:else if prerequisites.ollama.installed}
-                <span class="text-yellow-400">⚠ Not running</span>
-              {:else}
-                <button
-                  class="px-3 py-1 bg-accent-600 hover:bg-accent-700 rounded text-sm"
-                  onclick={() => prerequisites?.ollama.download_url && openDownload(prerequisites.ollama.download_url)}
-                >
-                  Install
-                </button>
+            <div class="p-3 bg-dark-700 rounded-lg">
+              <div class="flex items-center justify-between">
+                <span>Ollama</span>
+                {#if prerequisites.ollama.running}
+                  <span class="text-green-400">✓ v{prerequisites.ollama.version}</span>
+                {:else if prerequisites.ollama.installed}
+                  <span class="text-yellow-400">⚠ Not running</span>
+                {:else if installingDependency === 'ollama'}
+                  <span class="text-blue-400 text-sm">Installing...</span>
+                {:else}
+                  <button
+                    class="px-3 py-1 bg-accent-600 hover:bg-accent-700 rounded text-sm disabled:opacity-50"
+                    onclick={() => installDependency('ollama')}
+                    disabled={!!installingDependency || downloadingModel}
+                  >
+                    Download & Install
+                  </button>
+                {/if}
+              </div>
+              {#if installingDependency === 'ollama' && installProgress}
+                <div class="mt-2">
+                  <div class="flex justify-between text-sm text-gray-400 mb-1">
+                    <span class="truncate mr-2">{installProgress.message}</span>
+                    {#if installProgress.phase === 'downloading' && installProgress.total > 0}
+                      <span class="shrink-0">{installProgress.percent.toFixed(1)}%</span>
+                    {/if}
+                  </div>
+                  <div class="w-full bg-dark-600 rounded-full h-2">
+                    {#if installProgress.phase === 'downloading' && installProgress.total > 0}
+                      <div
+                        class="bg-accent-500 h-2 rounded-full transition-all duration-300"
+                        style="width: {installProgress.percent}%"
+                      ></div>
+                    {:else}
+                      <div class="bg-accent-500 h-2 rounded-full animate-pulse w-full"></div>
+                    {/if}
+                  </div>
+                  {#if installProgress.phase === 'downloading' && installProgress.total > 0}
+                    <div class="text-xs text-gray-500 mt-1">
+                      {formatBytes(installProgress.downloaded)} / {formatBytes(installProgress.total)}
+                    </div>
+                  {/if}
+                </div>
               {/if}
             </div>
 
@@ -260,7 +353,7 @@
                 id="model-select"
                 bind:value={selectedModel}
                 class="w-full bg-dark-600 border border-dark-500 rounded p-2 mb-3 text-white"
-                disabled={downloadingModel}
+                disabled={downloadingModel || !!installingDependency}
               >
                 {#each availableModels as model}
                   <option value={model.name}>
@@ -318,7 +411,7 @@
             <button
               class="w-full py-3 bg-accent-600 hover:bg-accent-700 rounded-lg font-semibold transition-colors disabled:opacity-50"
               onclick={startServices}
-              disabled={downloadingModel}
+              disabled={downloadingModel || !!installingDependency}
             >
               🚀 Start Dark-GPT
             </button>

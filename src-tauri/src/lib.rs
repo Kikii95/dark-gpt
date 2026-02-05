@@ -30,6 +30,8 @@ pub fn run() {
             commands::ollama::get_model_info,
             commands::health::check_all_services,
             commands::health::get_webui_url,
+            commands::installer::install_ollama,
+            commands::installer::install_docker,
             commands::setup::detect_prerequisites,
             commands::setup::get_setup_state,
             commands::setup::save_settings,

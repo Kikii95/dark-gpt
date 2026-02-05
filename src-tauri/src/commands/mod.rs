@@ -3,5 +3,6 @@
 
 pub mod docker;
 pub mod health;
+pub mod installer;
 pub mod ollama;
 pub mod setup;
