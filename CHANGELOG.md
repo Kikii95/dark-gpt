@@ -2,6 +2,26 @@
 
 Toutes les modifications notables de ce projet sont documentées ici.
 
+## [0.6.3] - 2026-02-05
+
+### Added
+
+- **Standalone Auto-Install** : Docker et Ollama s'installent depuis le setup wizard
+  - `installer.rs` : module backend complet (download streaming + silent install + verify)
+  - Download HTTP avec progress events par chunks (`install-progress` event)
+  - Ollama : `/VERYSILENT` Inno Setup + poll API (40s) + fallback `ollama serve`
+  - Docker : `--quiet --accept-license` + start Desktop + poll `docker info` (90s)
+  - Gestion restart Windows (message utilisateur si reboot requis)
+  - Cleanup automatique des installers temporaires
+  - Fallback non-Windows avec message d'erreur explicite
+
+### Changed
+
+- Setup wizard : boutons "Install" → "Download & Install" avec progress bars
+- Progress bar dynamique : pourcentage pendant download, pulsante pendant install/verify
+- Tous les contrôles (model select, download, start) désactivés pendant installation
+- Auto-refresh des prérequis après installation réussie
+
 ## [0.6.2] - 2026-02-05
 
 ### Fixed

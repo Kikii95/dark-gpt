@@ -46,6 +46,7 @@
 | M5 : Interface Web          | Semaine 3  | ✅ Terminé          |
 | M6 : Déploiement prod-ready | Semaine 4  | ✅ Terminé (v0.5.0) |
 | M7 : Rapport final          | Semaine 4+ | 🟡 En cours         |
+| M8 : Desktop standalone     | Semaine 5  | ✅ Terminé (v0.6.3) |
 
 ## 📊 Résultats Clés
 

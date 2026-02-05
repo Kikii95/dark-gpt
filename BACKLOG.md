@@ -22,6 +22,14 @@
 
 ## ✅ Terminé
 
+### Phase 7 : Desktop Standalone (v0.6.3)
+
+- [x] Auto-install Ollama depuis setup wizard (download + silent install + verify)
+- [x] Auto-install Docker Desktop depuis setup wizard (download + silent install + verify)
+- [x] Progress bars streaming temps-réel (download/install/verify phases)
+- [x] Fallback gracieux non-Windows (message + URLs manuelles)
+- [x] UI: boutons "Download & Install" remplacent "Install"
+
 ### Phase 6 : Déploiement Production-Ready (v0.5.0)
 
 - [x] HTTPS local avec Caddy + mkcert
