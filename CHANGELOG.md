@@ -2,6 +2,28 @@
 
 Toutes les modifications notables de ce projet sont documentées ici.
 
+## [0.6.2] - 2026-02-05
+
+### Fixed
+
+- **Windows launch crash** : App silently failed to start on Windows
+  - Added Win32 MessageBox panic hook — crashes now show an error dialog instead of dying silently
+  - Added explicit WebView2 `downloadBootstrapper` config for NSIS installer
+  - Replaced `expect()` with `unwrap_or_else` + actionable error message mentioning WebView2
+- **Blocking I/O in async runtime** : Replaced all `std::process::Command` with `tokio::process::Command`
+  - `setup.rs`: `detect_docker()`, `detect_ollama()`, `check_binary_exists()`
+  - `docker.rs`: `check_docker()`, `start_services()`, `stop_services()`, `get_service_logs()`
+  - `health.rs`: `check_docker_health()`
+- **Docker hang on Windows** : Added 5-10s timeouts on all Docker/system commands
+  - `docker info` could hang indefinitely if Docker Desktop installed but not running
+  - All commands now fail gracefully with timeout messages
+
+### Changed
+
+- Health checks now run concurrently via `tokio::join!` (faster startup)
+- Prerequisites detection runs Docker/Ollama/models checks in parallel
+- Version alignment: Cargo.toml, tauri.conf.json, package.json all at 0.6.2
+
 ## [0.6.1] - 2026-02-02
 
 ### Added

@@ -2,6 +2,10 @@
 
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
+use tokio::process::Command as TokioCommand;
+use tokio::time::{timeout, Duration};
+
+const CMD_TIMEOUT: Duration = Duration::from_secs(5);
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Prerequisites {
@@ -90,15 +94,16 @@ pub async fn detect_prerequisites() -> Result<Prerequisites, String> {
         arch: std::env::consts::ARCH.to_string(),
     };
 
-    // Docker status
-    let docker = detect_docker().await;
+    // Run Docker and Ollama detection concurrently
+    let (docker, ollama, installed_models) = tokio::join!(
+        detect_docker(),
+        detect_ollama(),
+        get_installed_dolphin_models(),
+    );
 
-    // Ollama status
-    let ollama = detect_ollama().await;
-
-    // Get installed dolphin models
-    let installed_models = get_installed_dolphin_models().await;
-    let model_dolphin = installed_models.iter().any(|m| m.starts_with("dolphin-llama3:8b"));
+    let model_dolphin = installed_models
+        .iter()
+        .any(|m| m.starts_with("dolphin-llama3:8b"));
 
     // Check HTTPS configuration
     let https_configured = check_https_configured();
@@ -114,20 +119,27 @@ pub async fn detect_prerequisites() -> Result<Prerequisites, String> {
 }
 
 async fn detect_docker() -> DependencyStatus {
-    let output = std::process::Command::new("docker")
-        .args(["version", "--format", "{{.Server.Version}}"])
-        .output();
+    // Use tokio::process::Command (non-blocking) with a timeout
+    let output = timeout(
+        CMD_TIMEOUT,
+        TokioCommand::new("docker")
+            .args(["version", "--format", "{{.Server.Version}}"])
+            .output(),
+    )
+    .await;
 
     match output {
-        Ok(o) if o.status.success() => {
+        Ok(Ok(o)) if o.status.success() => {
             let version = String::from_utf8_lossy(&o.stdout).trim().to_string();
 
-            // Check if running
-            let running = std::process::Command::new("docker")
-                .args(["info"])
-                .output()
-                .map(|o| o.status.success())
-                .unwrap_or(false);
+            // Check if daemon is responsive (also with timeout)
+            let running = timeout(
+                CMD_TIMEOUT,
+                TokioCommand::new("docker").args(["info"]).output(),
+            )
+            .await
+            .map(|r| r.map(|o| o.status.success()).unwrap_or(false))
+            .unwrap_or(false);
 
             DependencyStatus {
                 installed: true,
@@ -147,7 +159,7 @@ async fn detect_docker() -> DependencyStatus {
 
 async fn detect_ollama() -> DependencyStatus {
     let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(2))
+        .timeout(Duration::from_secs(2))
         .build()
         .unwrap();
 
@@ -166,17 +178,8 @@ async fn detect_ollama() -> DependencyStatus {
             }
         }
         _ => {
-            // Check if binary exists
-            let installed = std::process::Command::new("which")
-                .arg("ollama")
-                .output()
-                .map(|o| o.status.success())
-                .unwrap_or(false)
-                || std::process::Command::new("where")
-                    .arg("ollama")
-                    .output()
-                    .map(|o| o.status.success())
-                    .unwrap_or(false);
+            // Check if binary exists (with timeout)
+            let installed = check_binary_exists("ollama").await;
 
             DependencyStatus {
                 installed,
@@ -188,9 +191,27 @@ async fn detect_ollama() -> DependencyStatus {
     }
 }
 
+/// Check if a binary exists on the system PATH (non-blocking + timeout)
+async fn check_binary_exists(name: &str) -> bool {
+    // Try `where` on Windows, `which` on Unix
+    let cmd = if cfg!(target_os = "windows") {
+        "where"
+    } else {
+        "which"
+    };
+
+    timeout(
+        Duration::from_secs(2),
+        TokioCommand::new(cmd).arg(name).output(),
+    )
+    .await
+    .map(|r| r.map(|o| o.status.success()).unwrap_or(false))
+    .unwrap_or(false)
+}
+
 async fn get_installed_dolphin_models() -> Vec<String> {
     let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(2))
+        .timeout(Duration::from_secs(2))
         .build()
         .unwrap();
 

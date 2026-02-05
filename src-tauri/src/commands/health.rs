@@ -1,6 +1,10 @@
 // Health check commands
 
 use serde::{Deserialize, Serialize};
+use tokio::process::Command as TokioCommand;
+use tokio::time::{timeout, Duration};
+
+const CMD_TIMEOUT: Duration = Duration::from_secs(5);
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HealthReport {
@@ -30,21 +34,17 @@ pub async fn check_all_services() -> Result<HealthReport, String> {
     tracing::debug!("Checking all services health");
 
     let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(5))
+        .timeout(Duration::from_secs(5))
         .build()
         .map_err(|e| format!("Failed to create client: {}", e))?;
 
-    // Check Docker
-    let docker_health = check_docker_health().await;
-
-    // Check Ollama
-    let ollama_health = check_ollama_health(&client).await;
-
-    // Check WebUI (via HTTPS)
-    let webui_health = check_webui_health(&client).await;
-
-    // Check Caddy
-    let caddy_health = check_caddy_health(&client).await;
+    // Run all health checks concurrently
+    let (docker_health, ollama_health, webui_health, caddy_health) = tokio::join!(
+        check_docker_health(),
+        check_ollama_health(&client),
+        check_webui_health(&client),
+        check_caddy_health(&client),
+    );
 
     Ok(HealthReport {
         docker: docker_health,
@@ -55,25 +55,32 @@ pub async fn check_all_services() -> Result<HealthReport, String> {
 }
 
 async fn check_docker_health() -> ServiceHealth {
-    let output = std::process::Command::new("docker")
-        .args(["info"])
-        .output();
+    let output = timeout(
+        CMD_TIMEOUT,
+        TokioCommand::new("docker").args(["info"]).output(),
+    )
+    .await;
 
     match output {
-        Ok(o) if o.status.success() => ServiceHealth {
+        Ok(Ok(o)) if o.status.success() => ServiceHealth {
             name: "Docker".to_string(),
             status: HealthStatus::Healthy,
             message: Some("Docker daemon running".to_string()),
         },
-        Ok(_) => ServiceHealth {
+        Ok(Ok(_)) => ServiceHealth {
             name: "Docker".to_string(),
             status: HealthStatus::Unhealthy,
             message: Some("Docker daemon not responding".to_string()),
         },
-        Err(_) => ServiceHealth {
+        Ok(Err(_)) => ServiceHealth {
             name: "Docker".to_string(),
             status: HealthStatus::Unknown,
             message: Some("Docker not installed".to_string()),
+        },
+        Err(_) => ServiceHealth {
+            name: "Docker".to_string(),
+            status: HealthStatus::Unhealthy,
+            message: Some("Docker check timed out (5s)".to_string()),
         },
     }
 }
@@ -99,7 +106,6 @@ async fn check_ollama_health(client: &reqwest::Client) -> ServiceHealth {
 }
 
 async fn check_webui_health(client: &reqwest::Client) -> ServiceHealth {
-    // Try HTTPS first, then HTTP
     let urls = [
         "https://dark-gpt.local/health",
         "http://localhost:3002/health",
@@ -147,9 +153,8 @@ async fn check_caddy_health(client: &reqwest::Client) -> ServiceHealth {
 /// Get the WebUI URL
 #[tauri::command]
 pub async fn get_webui_url() -> Result<String, String> {
-    // Prefer HTTPS if available
     let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(2))
+        .timeout(Duration::from_secs(2))
         .danger_accept_invalid_certs(true)
         .build()
         .map_err(|e| format!("Client error: {}", e))?;

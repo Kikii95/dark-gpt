@@ -15,7 +15,7 @@ pub fn run() {
         .with(EnvFilter::from_default_env().add_directive("dark_gpt=debug".parse().unwrap()))
         .init();
 
-    tracing::info!("Starting Dark-GPT Desktop v0.6.1");
+    tracing::info!("Starting Dark-GPT Desktop v0.6.2");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
@@ -43,5 +43,12 @@ pub fn run() {
             Ok(())
         })
         .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .unwrap_or_else(|e| {
+            panic!(
+                "Failed to start Dark-GPT: {}\n\n\
+                 This is usually caused by a missing WebView2 runtime.\n\
+                 Install it from: https://developer.microsoft.com/en-us/microsoft-edge/webview2/",
+                e
+            );
+        });
 }

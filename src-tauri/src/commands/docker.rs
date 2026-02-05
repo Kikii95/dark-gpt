@@ -1,8 +1,11 @@
 // Docker management commands
 
 use serde::{Deserialize, Serialize};
-use std::process::Command;
 use tauri::{AppHandle, Manager};
+use tokio::process::Command as TokioCommand;
+use tokio::time::{timeout, Duration};
+
+const CMD_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DockerStatus {
@@ -23,20 +26,26 @@ pub struct ServiceStatus {
 pub async fn check_docker() -> Result<DockerStatus, String> {
     tracing::debug!("Checking Docker status");
 
-    // Check if docker command exists
-    let version_output = Command::new("docker")
-        .args(["version", "--format", "{{.Server.Version}}"])
-        .output();
+    let version_output = timeout(
+        CMD_TIMEOUT,
+        TokioCommand::new("docker")
+            .args(["version", "--format", "{{.Server.Version}}"])
+            .output(),
+    )
+    .await;
 
     match version_output {
-        Ok(output) if output.status.success() => {
+        Ok(Ok(output)) if output.status.success() => {
             let version = String::from_utf8_lossy(&output.stdout).trim().to_string();
             tracing::info!("Docker version: {}", version);
 
-            // Check if Docker daemon is running
-            let info_output = Command::new("docker").args(["info"]).output();
-
-            let running = info_output.map(|o| o.status.success()).unwrap_or(false);
+            let running = timeout(
+                CMD_TIMEOUT,
+                TokioCommand::new("docker").args(["info"]).output(),
+            )
+            .await
+            .map(|r| r.map(|o| o.status.success()).unwrap_or(false))
+            .unwrap_or(false);
 
             Ok(DockerStatus {
                 installed: true,
@@ -44,12 +53,12 @@ pub async fn check_docker() -> Result<DockerStatus, String> {
                 version: Some(version),
             })
         }
-        Ok(_) => Ok(DockerStatus {
+        Ok(Ok(_)) => Ok(DockerStatus {
             installed: true,
             running: false,
             version: None,
         }),
-        Err(_) => Ok(DockerStatus {
+        _ => Ok(DockerStatus {
             installed: false,
             running: false,
             version: None,
@@ -62,7 +71,6 @@ pub async fn check_docker() -> Result<DockerStatus, String> {
 pub async fn start_services(app: AppHandle) -> Result<Vec<ServiceStatus>, String> {
     tracing::info!("Starting Docker services");
 
-    // Get resource path for docker-compose.yml
     let docker_dir = app
         .path()
         .resource_dir()
@@ -78,17 +86,21 @@ pub async fn start_services(app: AppHandle) -> Result<Vec<ServiceStatus>, String
         ));
     }
 
-    // Run docker compose up
-    let output = Command::new("docker")
-        .args([
-            "compose",
-            "-f",
-            compose_file.to_str().unwrap(),
-            "up",
-            "-d",
-        ])
-        .output()
-        .map_err(|e| format!("Failed to start services: {}", e))?;
+    let output = timeout(
+        Duration::from_secs(60),
+        TokioCommand::new("docker")
+            .args([
+                "compose",
+                "-f",
+                compose_file.to_str().unwrap(),
+                "up",
+                "-d",
+            ])
+            .output(),
+    )
+    .await
+    .map_err(|_| "Timed out starting services (60s)".to_string())?
+    .map_err(|e| format!("Failed to start services: {}", e))?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -97,7 +109,6 @@ pub async fn start_services(app: AppHandle) -> Result<Vec<ServiceStatus>, String
 
     tracing::info!("Docker services started");
 
-    // Return status of services
     Ok(vec![
         ServiceStatus {
             name: "caddy".to_string(),
@@ -125,15 +136,20 @@ pub async fn stop_services(app: AppHandle) -> Result<(), String> {
 
     let compose_file = docker_dir.join("docker-compose.yml");
 
-    let output = Command::new("docker")
-        .args([
-            "compose",
-            "-f",
-            compose_file.to_str().unwrap(),
-            "down",
-        ])
-        .output()
-        .map_err(|e| format!("Failed to stop services: {}", e))?;
+    let output = timeout(
+        Duration::from_secs(30),
+        TokioCommand::new("docker")
+            .args([
+                "compose",
+                "-f",
+                compose_file.to_str().unwrap(),
+                "down",
+            ])
+            .output(),
+    )
+    .await
+    .map_err(|_| "Timed out stopping services (30s)".to_string())?
+    .map_err(|e| format!("Failed to stop services: {}", e))?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -160,18 +176,23 @@ pub async fn get_service_logs(
     let compose_file = docker_dir.join("docker-compose.yml");
     let lines_str = lines.unwrap_or(100).to_string();
 
-    let output = Command::new("docker")
-        .args([
-            "compose",
-            "-f",
-            compose_file.to_str().unwrap(),
-            "logs",
-            "--tail",
-            &lines_str,
-            &service,
-        ])
-        .output()
-        .map_err(|e| format!("Failed to get logs: {}", e))?;
+    let output = timeout(
+        Duration::from_secs(10),
+        TokioCommand::new("docker")
+            .args([
+                "compose",
+                "-f",
+                compose_file.to_str().unwrap(),
+                "logs",
+                "--tail",
+                &lines_str,
+                &service,
+            ])
+            .output(),
+    )
+    .await
+    .map_err(|_| "Timed out fetching logs".to_string())?
+    .map_err(|e| format!("Failed to get logs: {}", e))?;
 
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
